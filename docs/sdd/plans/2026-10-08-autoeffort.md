@@ -343,14 +343,14 @@
 - Consumes: атоми стану й `formatStatus` з Task 6 / Task 5.
 - Produces: команда `autoeffort`.
 
-- [ ] **Step 1: тест** `tests/command.test.ts`:
+- [x] **Step 1: тест** `tests/command.test.ts`:
   - `$.command.run({ command: 'autoeffort', args: '' })` → `text` містить `увімкнено`, рядок `baseline:` і до 20 останніх рішень у форматі `<thread>#<step> <level> · <phase> (<source>)[ ↑<floor>]`;
   - `args: 'off'` → `text === 'autoeffort вимкнено'`, далі крок `turn.step` передає `effort` без змін; `args: 'on'` → `'autoeffort увімкнено'`;
   - `args: 'log'` → усі записи логу (по рядку на запис, з часом ISO);
   - невідомий аргумент → `text` з підказкою `Використання: /autoeffort [on|off|log]`.
-- [ ] **Step 2:** падає.
-- [ ] **Step 3:** у `session.start` додати `await $.command.register({ name: 'autoeffort', description: 'Стан і керування autoeffort: /autoeffort [on|off|log]' })` (поля звірити з `CommandSpec`); хук `on('command.run', { command: 'autoeffort' }, async ($, e) => …)` повертає `{ text }` за сценаріями вище. `README.md`: що робить мод (таблиця фаз і рівнів), маркери, межа скіла, підлога medium, налаштування `userConfig` (через `/config` або `pluginConfigs.autoeffort.options` у `~/.claude/settings.json`), підключення `claude --plugin-dir /home/pc/projects/my-cc-mods/autoeffort` або `CLAUDE_CODE_PLUGIN_DIRS` в `env` у `~/.claude/settings.json`, команда `/autoeffort`.
-- [ ] **Step 4:** `claude plugin test` → усі зелені; `claude plugin validate` → `√ Validation passed`; `tsc -p` → чисто.
+- [x] **Step 2:** падає.
+- [x] **Step 3:** у `session.start` додати `await $.command.register({ name: 'autoeffort', description: 'Стан і керування autoeffort: /autoeffort [on|off|log]' })` (поля звірити з `CommandSpec`); хук `on('command.run', { command: 'autoeffort' }, async ($, e) => …)` повертає `{ text }` за сценаріями вище. `README.md`: що робить мод (таблиця фаз і рівнів), маркери, межа скіла, підлога medium, налаштування `userConfig` (через `/config` або `pluginConfigs.autoeffort.options` у `~/.claude/settings.json`), підключення `claude --plugin-dir /home/pc/projects/my-cc-mods/autoeffort` або `CLAUDE_CODE_PLUGIN_DIRS` в `env` у `~/.claude/settings.json`, команда `/autoeffort`.
+- [x] **Step 4:** `claude plugin test` → усі зелені; `claude plugin validate` → `√ Validation passed`; `tsc -p` → чисто.
 
 ---
 
