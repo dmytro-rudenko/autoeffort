@@ -6,32 +6,32 @@ import type { History } from '../src/classify'
 
 const readHist: History = { ...EMPTY_HISTORY, steps: [{ tools: [{ name: 'Read' }] }], readStreak: 1 }
 
-test('маркер має пріоритет над first-step', () => {
+test('marker takes priority over first-step', () => {
   const d = decide({ history: EMPTY_HISTORY, stepIndex: 0, marker: 'implement' }, DEFAULTS)
   expect(d).toEqual({ level: 'medium', phase: 'implement', source: 'marker' })
 })
 
-test('невалідний маркер ігнорується → правила', () => {
+test('invalid marker is ignored → rules', () => {
   const d = decide({ history: EMPTY_HISTORY, stepIndex: 0, marker: 'bogus' as any }, DEFAULTS)
   expect(d).toEqual({ level: 'xhigh', phase: 'plan', source: 'rule:first-step' })
 })
 
-test('межа дорівнює базі (xhigh при plan) → без floor', () => {
+test('floor level equals the base (xhigh at plan) → no floor', () => {
   const d = decide({ history: EMPTY_HISTORY, stepIndex: 0, floorLevel: 'xhigh', floorLabel: 'agent' }, DEFAULTS)
   expect(d).toEqual({ level: 'xhigh', phase: 'plan', source: 'rule:first-step' })
 })
 
-test('без маркера, крок 0 → xhigh/plan/rule:first-step', () => {
+test('no marker, step 0 → xhigh/plan/rule:first-step', () => {
   const d = decide({ history: EMPTY_HISTORY, stepIndex: 0 }, DEFAULTS)
   expect(d).toEqual({ level: 'xhigh', phase: 'plan', source: 'rule:first-step' })
   expect(formatStatus(d)).toBe('⚙ xhigh · plan (rule:first-step)')
 })
 
-test('статус маркера без підлоги', () => {
+test('marker status without a floor', () => {
   expect(formatStatus({ level: 'xhigh', phase: 'plan', source: 'marker' })).toBe('⚙ xhigh · plan (marker)')
 })
 
-test('Read-крок, межа high від skill:review → high з floor', () => {
+test('Read step, floor level high from skill:review → high with floor', () => {
   const d = decide({ history: readHist, stepIndex: 1, floorLevel: 'high', floorLabel: 'skill:review' }, DEFAULTS)
   expect(d.level).toBe('high')
   expect(d.phase).toBe('gather')
@@ -40,24 +40,24 @@ test('Read-крок, межа high від skill:review → high з floor', () =>
   expect(formatStatus(d)).toBe('⚙ high · gather (rule:read) ↑skill')
 })
 
-test('межа без мітки → floor:<level>', () => {
+test('floor level without a label → floor:<level>', () => {
   const d = decide({ history: readHist, stepIndex: 1, floorLevel: 'max' }, DEFAULTS)
   expect(d.level).toBe('max')
   expect(d.floor).toBe('floor:max')
   expect(formatStatus(d).endsWith(' ↑floor')).toBe(true)
 })
 
-test('межа medium при фазі plan → xhigh без floor', () => {
+test('floor level medium at plan phase → xhigh without floor', () => {
   const d = decide({ history: EMPTY_HISTORY, stepIndex: 0, floorLevel: 'medium', floorLabel: 'agent' }, DEFAULTS)
   expect(d).toEqual({ level: 'xhigh', phase: 'plan', source: 'rule:first-step' })
 })
 
-test('межа low не впливає, рівень ≥ medium', () => {
+test('floor level low has no effect, level ≥ medium', () => {
   const d = decide({ history: readHist, stepIndex: 1, floorLevel: 'low', floorLabel: 'agent' }, DEFAULTS)
   expect(d).toEqual({ level: 'medium', phase: 'gather', source: 'rule:read' })
 })
 
-test('levels.gather = max → Read-крок дає max', () => {
+test('levels.gather = max → a Read step yields max', () => {
   const cfg = loadConfig({ gather: 'max' })
   expect(cfg.levels.gather).toBe('max')
   const d = decide({ history: readHist, stepIndex: 1 }, cfg)

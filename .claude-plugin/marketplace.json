@@ -1,6 +1,6 @@
 {
   "name": "autoeffort",
-  "description": "autoeffort — effort кожного запиту Claude Code за фазою роботи",
+  "description": "autoeffort — per-request effort for Claude Code by work phase",
   "owner": { "name": "dmytro-rudenko" },
   "plugins": [{ "name": "autoeffort", "source": "./" }]
 }

@@ -1,5 +1,5 @@
-// Потоковий фільтр маркера фази ⟦phase:…⟧: вирізає маркери з тексту,
-// що стрімиться шматками, і запам'ятовує останню валідну фазу.
+// Streaming filter for the phase marker ⟦phase:…⟧: strips markers from text
+// that arrives in chunks and remembers the last valid phase.
 
 export type Phase = 'gather' | 'plan' | 'implement' | 'verify'
 
@@ -17,11 +17,11 @@ function isPhase(v: string): v is Phase {
   return v === 'gather' || v === 'plan' || v === 'implement' || v === 'verify'
 }
 
-// Вирізає всі повні маркери; onPhase викликається для кожного валідного по черзі.
-// endsAtTail — чи останній маркер закінчився в самому кінці тексту без переносу
-// (тоді перенос може прийти наступним шматком).
-// Прохід повторюється, доки текст змінюється: вирізання одного маркера може
-// склеїти уламки навколо нього в новий маркер. Фази пишуться в порядку проходів.
+// Strips every complete marker; onPhase is called for each valid one in order.
+// endsAtTail: whether the last marker ended at the very end of the text without a newline
+// (the newline may then arrive in the next chunk).
+// The pass repeats while the text keeps changing: stripping one marker can join
+// the fragments around it into a new marker. Phases are reported in pass order.
 function cut(text: string, onPhase?: (p: Phase) => void): { text: string; endsAtTail: boolean } {
   let endsAtTail = false
   let cur = text
@@ -38,7 +38,7 @@ function cut(text: string, onPhase?: (p: Phase) => void): { text: string; endsAt
   return { text: cur, endsAtTail }
 }
 
-// Скільки символів з кінця треба утримати як можливий початок маркера.
+// How many trailing characters to hold back as a possible start of a marker.
 function holdLength(text: string): number {
   const i = text.lastIndexOf('⟦')
   if (i < 0) return 0
@@ -46,7 +46,7 @@ function holdLength(text: string): number {
   if (tail.length >= HOLD_LIMIT) return 0
   if (tail.includes('⟧')) return 0
   if (PREFIX.startsWith(tail)) return tail.length
-  // Перенос рядка всередині значення робить маркер неможливим.
+  // A newline inside the value makes a marker impossible.
   if (tail.startsWith(PREFIX) && !tail.includes('\n')) return tail.length
   return 0
 }
@@ -54,7 +54,7 @@ function holdLength(text: string): number {
 export function createMarkerFilter(): MarkerFilter {
   let buffer = ''
   let phase: Phase | undefined
-  // Маркер закінчився в кінці попереднього шматка: зняти провідні [ \t]*\n? наступного.
+  // The marker ended at the end of the previous chunk: strip the leading [ \t]*\n? of the next one.
   let pending = false
   return {
     push(text: string): string {

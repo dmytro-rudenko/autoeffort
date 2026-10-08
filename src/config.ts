@@ -1,4 +1,4 @@
-// Налаштування мода з `userConfig`: кожне поле перевіряється окремо, невалідне → типове значення.
+// Mod settings from `userConfig`: each field is validated separately, an invalid one → its default.
 import { type Level, isLevel, applyFloor } from './levels'
 
 export type PhaseName = 'gather' | 'plan' | 'implement' | 'verify'
@@ -16,10 +16,10 @@ export const DEFAULTS: Config = {
   verifyPattern: new RegExp(DEFAULT_VERIFY_PATTERN),
 }
 
-// Некоректний RegExp не має зламати мод — повертаємось до типового.
+// An invalid RegExp must not break the mod; fall back to the default.
 const compile = (src: unknown): RegExp => {
   if (typeof src === 'string') {
-    try { return new RegExp(src) } catch { /* типовий нижче */ }
+    try { return new RegExp(src) } catch { /* default below */ }
   }
   return new RegExp(DEFAULT_VERIFY_PATTERN)
 }
@@ -28,7 +28,7 @@ export function loadConfig(options: Readonly<Record<string, unknown>>): Config {
   const levels = {} as Record<PhaseName, Level>
   for (const p of PHASES) {
     const v = options[p]
-    // `low` проходить isLevel і піднімається підлогою до `medium`.
+    // `low` passes isLevel and is raised to `medium` by the floor.
     levels[p] = isLevel(v) ? applyFloor(v) : DEFAULT_LEVELS[p]
   }
   const rs = options.readStreak

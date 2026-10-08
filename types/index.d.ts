@@ -1,7 +1,7 @@
-// Контракт стану мода autoeffort у $.state.
+// State contract of the autoeffort mod in $.state.
 export type AutoeffortStep = { tools: { name: string; command?: string }[] }
 export type AutoeffortThread = {
-  steps: AutoeffortStep[]        // останні ≤ 10 кроків
+  steps: AutoeffortStep[]        // last ≤ 10 steps
   readStreak: number
   editedThisTurn: boolean
   lastPhase?: 'gather' | 'plan' | 'implement' | 'verify'

@@ -1,7 +1,7 @@
 import { test, expect } from 'claude-code/testing'
 import { loadConfig, DEFAULTS, DEFAULT_VERIFY_PATTERN } from '../src/config'
 
-test('порожні options → DEFAULTS', () => {
+test('empty options → DEFAULTS', () => {
   const c = loadConfig({})
   expect(c.enabled).toBe(true)
   expect(c.levels).toEqual({ gather: 'medium', plan: 'xhigh', implement: 'medium', verify: 'xhigh' })
@@ -12,7 +12,7 @@ test('порожні options → DEFAULTS', () => {
 })
 test('plan: max', () => { expect(loadConfig({ plan: 'max' }).levels.plan).toBe('max') })
 test('low → medium', () => { expect(loadConfig({ gather: 'low', verify: 'low' }).levels).toEqual({ gather: 'medium', plan: 'xhigh', implement: 'medium', verify: 'medium' }) })
-test('невалідний рівень → типовий', () => {
+test('invalid level → default', () => {
   expect(loadConfig({ gather: 'turbo' }).levels.gather).toBe('medium')
   expect(loadConfig({ plan: 'toString' }).levels.plan).toBe('xhigh')
   expect(loadConfig({ verify: 4 }).levels.verify).toBe('xhigh')
@@ -35,17 +35,17 @@ test('enabled', () => {
 
 const VERIFY_SRC = '(^|[\\s;&|(])((npm|pnpm|yarn|bun)\\s+(run\\s+)?(test|lint|build|typecheck|check)(?![\\w-])|npx\\s+(jest|vitest|eslint|tsc)\\b|(jest|vitest|pytest|eslint|tsc|mypy|ruff)(\\s|$)|cargo\\s+(check|test|clippy)\\b|go\\s+(test|vet)\\b|make\\s+(test|check|lint)\\b)'
 
-test('типовий verifyPattern — вузький патерн команд перевірки', () => {
+test('default verifyPattern is a narrow pattern of verification commands', () => {
   expect(DEFAULT_VERIFY_PATTERN).toBe(VERIFY_SRC)
   expect(DEFAULTS.verifyPattern.source).toBe(VERIFY_SRC)
 })
 
-test('типовий verifyPattern: команди перевірки збігаються', () => {
+test('default verifyPattern: verification commands match', () => {
   for (const cmd of ['npm test', 'pnpm run build', 'npx vitest run', 'pytest -q', 'cd app && cargo test', 'tsc -p .', 'go test ./...', 'yarn lint', 'make check', '(tsc --noEmit)'])
     expect([cmd, DEFAULTS.verifyPattern.test(cmd)]).toEqual([cmd, true])
 })
 
-test('типовий verifyPattern: інші команди не збігаються', () => {
+test('default verifyPattern: other commands do not match', () => {
   for (const cmd of ['git commit -m "add tests"', 'cat test.txt', 'ls tests', 'npm run build-docs', 'npm install', 'echo build', 'mkdir lint', 'npm run testing'])
     expect([cmd, DEFAULTS.verifyPattern.test(cmd)]).toEqual([cmd, false])
 })

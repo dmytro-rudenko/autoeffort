@@ -1,4 +1,4 @@
-// Визначення фази роботи за інструментами попереднього кроку.
+// Determines the work phase from the tools of the previous step.
 export type Phase = 'gather' | 'plan' | 'implement' | 'verify'
 export const PHASES: readonly Phase[] = ['gather', 'plan', 'implement', 'verify']
 export const isPhase = (x: unknown): x is Phase => typeof x === 'string' && (PHASES as readonly string[]).includes(x)
@@ -18,12 +18,12 @@ const READ: readonly string[] = ['Read', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebS
 const isEdit = (t: ToolUse) => EDIT.includes(t.name)
 const isRead = (t: ToolUse) => READ.includes(t.name)
 
-// Правила застосовуються по порядку; спрацьовує перше.
+// Rules are applied in order; the first match wins.
 export function classify(h: History, ctx: ClassifyCtx): { phase: Phase; rule: string } {
   if (ctx.stepIndex === 0) return { phase: 'plan', rule: 'first-step' }
   const last = h.steps.at(-1)?.tools ?? []
   if (last.length > 0) {
-    // Verify перед edit: після запуску перевірки наступний крок розбирає її результати.
+    // Verify before edit: after a verification run, the next step analyses its results.
     if (h.editedThisTurn && last.some(t => t.name === 'Bash' && typeof t.command === 'string' && ctx.verifyPattern.test(t.command)))
       return { phase: 'verify', rule: 'verify-command' }
     if (last.some(isEdit)) return { phase: 'implement', rule: 'edit' }

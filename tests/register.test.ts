@@ -10,7 +10,7 @@ type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max' | undefined
 
 const COMPOSE = { model: 'claude-opus-5-5', promptModel: 'claude-opus-5-5', surfaces: [], tools: [], outputStyle: null, traits: [] }
 
-// Кіт не дає тесту читати $.state, тож останній записаний лог ловимо на state.set.
+// The kit does not let a test read $.state, so the last written log is captured on state.set.
 function captureLog(on: On) {
   const box: { log: AutoeffortLogEntry[]; threads: Record<string, AutoeffortThread> } = { log: [], threads: {} }
   on('state.set', (_$, e, next) => {
@@ -21,7 +21,7 @@ function captureLog(on: On) {
   return box
 }
 
-// Дно для подій, у які заходять хуки мода: модель, статус, лог, годинник.
+// Bottoms for the events the mod's hooks enter: model, status, log, clock.
 function bottoms(on: On, script: Script, seen: Effort[], statuses: (string | undefined)[] = []) {
   mock.clock(on, { now: 1000 })
   on('ui.status', (_$, e) => (statuses.push(e.text), { value: undefined }))
@@ -39,7 +39,7 @@ async function step($: Engine, index: number, effort: Effort, agentId?: string, 
   const input = { turnId, index, model: 'claude-opus-5-5', messageCount: 1, ...(effort !== undefined ? { effort } : {}), ...(agentId !== undefined ? { agentId } : {}) }
   const s = $.turn.step(input)
   const chunks: TurnStepChunk[] = []
-  // Читаємо вручну: результат потоку — значення `done`-кроку генератора.
+  // Read manually: the stream's result is the value of the generator's `done` step.
   for (;;) {
     const r = await s.next()
     if (r.done) return { chunks, result: r.value }
@@ -50,20 +50,20 @@ async function step($: Engine, index: number, effort: Effort, agentId?: string, 
 const textOf = (chunks: TurnStepChunk[]) => chunks.map(c => (c.kind === 'text' ? c.text : '')).join('')
 const READ: TurnStepToolUse[] = [{ name: 'Read', input: {} }]
 
-test('крок 0 → xhigh; маркер вирізано; крок 1 → medium за маркером implement', async ($, on) => {
-  const script: Script = { text: ['⟦phase:impl', 'ement⟧', '\nпишу'], tools: [] }
+test('step 0 → xhigh; marker stripped; step 1 → medium by the implement marker', async ($, on) => {
+  const script: Script = { text: ['⟦phase:impl', 'ement⟧', '\nwriting'], tools: [] }
   const seen: Effort[] = []
   bottoms(on, script, seen)
   const r0 = await step($, 0, 'high')
   expect(seen[0]).toBe('xhigh')
-  expect(textOf(r0.chunks)).toBe('пишу')
-  expect(r0.result.answer).toBe('пишу')
+  expect(textOf(r0.chunks)).toBe('writing')
+  expect(r0.result.answer).toBe('writing')
   script.text = ['ok']
   await step($, 1, 'high')
   expect(seen[1]).toBe('medium')
 })
 
-test('без маркерів: Read → medium, три Read поспіль → xhigh (read-streak)', async ($, on) => {
+test('no markers: Read → medium, three Reads in a row → xhigh (read-streak)', async ($, on) => {
   const script: Script = { text: ['x'], tools: READ }
   const seen: Effort[] = []
   bottoms(on, script, seen)
@@ -74,7 +74,7 @@ test('без маркерів: Read → medium, три Read поспіль → x
   expect(seen).toEqual(['xhigh', 'medium', 'medium', 'xhigh'])
 })
 
-test('Edit, далі Bash npm test → наступний крок xhigh (verify)', async ($, on) => {
+test('Edit, then Bash npm test → next step xhigh (verify)', async ($, on) => {
   const script: Script = { text: [], tools: [{ name: 'Edit', input: {} }] }
   const seen: Effort[] = []
   bottoms(on, script, seen)
@@ -87,7 +87,7 @@ test('Edit, далі Bash npm test → наступний крок xhigh (verify
   expect(box.log.at(-1)).toEqual({ at: 1000, thread: 'main', step: 2, incoming: 'high', level: 'xhigh', phase: 'verify', source: 'rule:verify-command' })
 })
 
-test('вхідний low на кроці gather → medium', async ($, on) => {
+test('incoming low on a gather step → medium', async ($, on) => {
   const script: Script = { text: [], tools: READ }
   const seen: Effort[] = []
   bottoms(on, script, seen)
@@ -96,7 +96,7 @@ test('вхідний low на кроці gather → medium', async ($, on) => {
   expect(seen[1]).toBe('medium')
 })
 
-test('скіл review з межею max при baseline high → max, floor у лозі', async ($, on) => {
+test('review skill with floor level max at baseline high → max, floor in the log', async ($, on) => {
   const script: Script = { text: [], tools: READ }
   const seen: Effort[] = []
   bottoms(on, script, seen)
@@ -108,8 +108,8 @@ test('скіл review з межею max при baseline high → max, floor у �
   expect(box.log.at(-1)?.floor).toBe('skill:review:max')
 })
 
-test('субагент має окремий стан треду', async ($, on) => {
-  const script: Script = { text: ['⟦phase:implement⟧ пишу'], tools: [] }
+test('a subagent has its own thread state', async ($, on) => {
+  const script: Script = { text: ['⟦phase:implement⟧ writing'], tools: [] }
   const seen: Effort[] = []
   bottoms(on, script, seen)
   await step($, 0, 'high')
@@ -120,7 +120,7 @@ test('субагент має окремий стан треду', async ($, on)
   expect(seen).toEqual(['xhigh', 'xhigh', 'xhigh', 'medium'])
 })
 
-test('effort відсутній → e без змін', async ($, on) => {
+test('effort missing → e unchanged', async ($, on) => {
   const seen: Effort[] = []
   bottoms(on, { text: ['⟦phase:plan⟧hi'], tools: [] }, seen)
   const r = await step($, 0, undefined)
@@ -129,7 +129,7 @@ test('effort відсутній → e без змін', async ($, on) => {
   expect(r.result.answer).toBe('hi')
 })
 
-test('turn.complete основного треду знімає межу скіла', async ($, on) => {
+test('turn.complete of the main thread lifts the skill floor', async ($, on) => {
   const script: Script = { text: [], tools: READ }
   const seen: Effort[] = []
   bottoms(on, script, seen)
@@ -143,7 +143,7 @@ test('turn.complete основного треду знімає межу скіл
   expect(seen[1]).toBe('medium')
 })
 
-test('вимкнено', { options: { enabled: false } }, async ($, on) => {
+test('disabled', { options: { enabled: false } }, async ($, on) => {
   const seen: Effort[] = []
   bottoms(on, { text: ['x'], tools: [] }, seen)
   await step($, 0, 'high')
@@ -152,13 +152,13 @@ test('вимкнено', { options: { enabled: false } }, async ($, on) => {
   expect(r.sections.some(s => s.id === 'autoeffort:phase-marker')).toBe(false)
 })
 
-test('prompt.compose додає секцію маркера', async ($, on) => {
+test('prompt.compose adds the marker section', async ($, on) => {
   bottoms(on, { text: [], tools: [] }, [])
   const r = await $.prompt.compose(COMPOSE)
   expect(r.sections).toEqual([{ id: 'autoeffort:phase-marker', text: MARKER_PROMPT, scope: 'session' }])
 })
 
-test('маркер останньої відповіді ходу не переходить у наступний хід', async ($, on) => {
+test('the marker of the last response in a turn does not carry into the next turn', async ($, on) => {
   const script: Script = { text: ['⟦phase:implement⟧ Done.'], tools: [] }
   const seen: Effort[] = []
   bottoms(on, script, seen)
@@ -170,9 +170,9 @@ test('маркер останньої відповіді ходу не пере�
   expect(box.log.at(-1)?.source).toBe('rule:first-step')
 })
 
-// Кіт не дає тестовому дну вигадати engine-чанк (ref має прийти від рушія),
-// тож цикл фільтрації перевіряється напряму через експортований filterChunks.
-test('engine-чанк посеред маркера не скидає утримання', async () => {
+// The kit does not let a test bottom fabricate an engine chunk (ref must come from the engine),
+// so the filtering loop is tested directly through the exported filterChunks.
+test('an engine chunk in the middle of a marker does not flush the hold', async () => {
   async function* src(): AsyncGenerator<TurnStepChunk> {
     yield { kind: 'text', index: 0, text: '⟦phase:ga' }
     yield { kind: 'engine', ref: 1 }
@@ -185,7 +185,7 @@ test('engine-чанк посеред маркера не скидає утрим
   expect(filter.phase).toBe('gather')
 })
 
-test('flush перед tool-чанком і перед текстом іншого блоку', async () => {
+test('flush before a tool chunk and before text of another block', async () => {
   async function* src(): AsyncGenerator<TurnStepChunk> {
     yield { kind: 'text', index: 0, text: 'a⟦ph' }
     yield { kind: 'text', index: 1, text: 'b' }
@@ -197,7 +197,7 @@ test('flush перед tool-чанком і перед текстом іншог
   expect(out.map(c => (c.kind === 'text' ? `${c.index}:${c.text}` : c.kind))).toEqual(['0:a', '0:⟦ph', '1:b', '1:⟦', 'stop'])
 })
 
-test('статус лише для основного треду', async ($, on) => {
+test('status only for the main thread', async ($, on) => {
   const statuses: (string | undefined)[] = []
   bottoms(on, { text: ['x'], tools: [] }, [], statuses)
   const box = captureLog(on)
@@ -208,7 +208,7 @@ test('статус лише для основного треду', async ($, on)
   expect(statuses).toEqual(['⚙ xhigh · plan (rule:first-step)'])
 })
 
-test('turn.complete субагента видаляє його тред', async ($, on) => {
+test('turn.complete of a subagent deletes its thread', async ($, on) => {
   bottoms(on, { text: ['x'], tools: [] }, [])
   on('turn.complete', (_$, e) => ({ text: e.answer }))
   const box = captureLog(on)
@@ -218,7 +218,7 @@ test('turn.complete субагента видаляє його тред', async 
   expect(Object.keys(box.threads)).toEqual([])
 })
 
-// Тестовий хук state.set, що відмовляє в записі заданого ключа: імітує збій запису стану.
+// Test state.set hook that refuses to write the given key: simulates a state write failure.
 function failWrite(on: On, key: string) {
   on('state.set', (_$, e, next) => {
     if (e.plugin === 'autoeffort' && e.key === key) return { deny: `denied ${key}` }
@@ -226,7 +226,7 @@ function failWrite(on: On, key: string) {
   })
 }
 
-test('fail-open: збій prepare (запис baseline) → вихідний effort, маркери вирізано', async ($, on) => {
+test('fail-open: prepare failure (baseline write) → original effort, markers stripped', async ($, on) => {
   const seen: Effort[] = []
   bottoms(on, { text: ['⟦phase:plan⟧\nhi'], tools: [] }, seen)
   failWrite(on, 'baseline')
@@ -236,7 +236,7 @@ test('fail-open: збій prepare (запис baseline) → вихідний eff
   expect(r.result.answer).toBe('hi')
 })
 
-test('fail-open: збій prepare (запис log) → вихідний effort, маркери вирізано', async ($, on) => {
+test('fail-open: prepare failure (log write) → original effort, markers stripped', async ($, on) => {
   const seen: Effort[] = []
   bottoms(on, { text: ['⟦phase:plan⟧\nhi'], tools: [] }, seen)
   failWrite(on, 'log')
@@ -246,7 +246,7 @@ test('fail-open: збій prepare (запис log) → вихідний effort, 
   expect(r.result.answer).toBe('hi')
 })
 
-test('fail-open: збій commit (запис threads) → результат повертається, маркери вирізано', async ($, on) => {
+test('fail-open: commit failure (threads write) → result is returned, markers stripped', async ($, on) => {
   const seen: Effort[] = []
   bottoms(on, { text: ['⟦phase:plan⟧\nhi'], tools: READ }, seen)
   failWrite(on, 'threads')
@@ -257,7 +257,7 @@ test('fail-open: збій commit (запис threads) → результат п�
   expect(r.result.toolUses).toEqual(READ)
 })
 
-test('межа субагента: baseline high, агент з max → max, floor agent:max', async ($, on) => {
+test('subagent floor: baseline high, agent with max → max, floor agent:max', async ($, on) => {
   const seen: Effort[] = []
   bottoms(on, { text: [], tools: READ }, seen)
   const box = captureLog(on)
@@ -268,7 +268,7 @@ test('межа субагента: baseline high, агент з max → max, flo
   expect(box.log.at(-1)?.floor).toBe('agent:max')
 })
 
-test('крок основного треду без effort очищає статус', async ($, on) => {
+test('a main-thread step without effort clears the status', async ($, on) => {
   const statuses: (string | undefined)[] = []
   bottoms(on, { text: ['x'], tools: [] }, [], statuses)
   await step($, 0, 'high')
@@ -276,14 +276,14 @@ test('крок основного треду без effort очищає стат
   expect(statuses).toEqual(['⚙ xhigh · plan (rule:first-step)', undefined])
 })
 
-test('крок субагента без effort статус не чіпає', async ($, on) => {
+test('a subagent step without effort leaves the status alone', async ($, on) => {
   const statuses: (string | undefined)[] = []
   bottoms(on, { text: ['x'], tools: [] }, [], statuses)
   await step($, 0, undefined, 'a1')
   expect(statuses).toEqual([])
 })
 
-test('стан треду: command лише для Bash, обрізаний до 200 символів', async ($, on) => {
+test('thread state: command only for Bash, truncated to 200 characters', async ($, on) => {
   const long = 'npm test ' + 'x'.repeat(300)
   const tools: TurnStepToolUse[] = [
     { name: 'Bash', input: { command: long } },
@@ -295,7 +295,7 @@ test('стан треду: command лише для Bash, обрізаний до
   expect(box.threads.main?.steps.at(-1)?.tools).toEqual([{ name: 'Bash', command: long.slice(0, 200) }, { name: 'Task' }])
 })
 
-test('маркер у thinking-чанку не показується', async ($, on) => {
+test('a marker in a thinking chunk is not shown', async ($, on) => {
   const seen: Effort[] = []
   mock.clock(on, { now: 1000 })
   on('ui.status', () => ({ value: undefined }))
@@ -303,18 +303,18 @@ test('маркер у thinking-чанку не показується', async ($
   on('turn.step', async function* (_$, e) {
     seen.push(e.effort as Effort)
     yield { kind: 'thinking', index: 0, text: '⟦phase:pl' }
-    yield { kind: 'thinking', index: 0, text: 'an⟧\nдумаю' }
+    yield { kind: 'thinking', index: 0, text: 'an⟧\npondering' }
     yield { kind: 'text', index: 1, text: 'ok' }
     return { turnId: e.turnId, index: e.index, answer: 'ok', toolUses: [], stopReason: 'end_turn', usage: null }
   })
   const box = captureLog(on)
   const r = await step($, 0, 'high')
-  expect(r.chunks.map(c => (c.kind === 'thinking' || c.kind === 'text' ? `${c.kind}:${c.text}` : c.kind))).toEqual(['thinking:думаю', 'text:ok'])
-  // Фаза з thinking ігнорується: маркера в тексті не було.
+  expect(r.chunks.map(c => (c.kind === 'thinking' || c.kind === 'text' ? `${c.kind}:${c.text}` : c.kind))).toEqual(['thinking:pondering', 'text:ok'])
+  // The phase from thinking is ignored: there was no marker in the text.
   expect(box.threads.main?.marker).toBeUndefined()
 })
 
-test('filterChunks: thinking утримується окремо і скидається перед текстом', async () => {
+test('filterChunks: thinking is held separately and flushed before text', async () => {
   async function* src(): AsyncGenerator<TurnStepChunk> {
     yield { kind: 'thinking', index: 0, text: 'a⟦ph' }
     yield { kind: 'text', index: 1, text: '⟦phase:verify⟧b' }

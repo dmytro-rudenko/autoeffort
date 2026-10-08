@@ -1,4 +1,4 @@
-// Рівні effort, якими керує мод; `low` завжди піднімається до `medium` (підлога).
+// Effort levels the mod works with; `low` is always raised to `medium` (the floor).
 export type Level = 'medium' | 'high' | 'xhigh' | 'max'
 export type AnyLevel = 'low' | Level
 export const LEVELS: readonly Level[] = ['medium', 'high', 'xhigh', 'max']

@@ -1,67 +1,67 @@
 import { test, expect } from 'claude-code/testing'
 import { createMarkerFilter, stripMarkers } from '../src/marker'
 
-test('маркер на початку вирізається разом з переносом', () => {
+test('a leading marker is stripped together with its newline', () => {
   const f = createMarkerFilter()
-  expect(f.push('⟦phase:plan⟧\nДалі читаю')).toBe('Далі читаю')
+  expect(f.push('⟦phase:plan⟧\nReading on')).toBe('Reading on')
   expect(f.phase).toBe('plan')
 })
 
-test('маркер, розірваний на 3 шматки', () => {
+test('a marker split across 3 chunks', () => {
   const f = createMarkerFilter()
-  const out = f.push('Ок ⟦pha') + f.push('se:impl') + f.push('ement⟧ go') + f.flush()
-  expect(out).toBe('Ок go')
+  const out = f.push('Ok ⟦pha') + f.push('se:impl') + f.push('ement⟧ go') + f.flush()
+  expect(out).toBe('Ok go')
   expect(f.phase).toBe('implement')
 })
 
-test('невалідний маркер вирізається, phase не змінюється', () => {
+test('an invalid marker is stripped, phase does not change', () => {
   const f = createMarkerFilter()
   expect(f.push('⟦phase:bogus⟧x')).toBe('x')
   expect(f.phase).toBe(undefined)
 })
 
-test('текст без маркера проходить без змін', () => {
+test('text without a marker passes through unchanged', () => {
   const f = createMarkerFilter()
-  expect(f.push('звичайний текст')).toBe('звичайний текст')
+  expect(f.push('plain text')).toBe('plain text')
   expect(f.push('a ⟦b⟧ c')).toBe('a ⟦b⟧ c')
-  expect(f.push('хвіст ⟦b')).toBe('хвіст ⟦b')
+  expect(f.push('tail ⟦b')).toBe('tail ⟦b')
   expect(f.flush()).toBe('')
 })
 
-test('незавершений префікс утримується до flush', () => {
+test('an incomplete prefix is held back until flush', () => {
   const f = createMarkerFilter()
-  expect(f.push('кінець ⟦ph')).toBe('кінець ')
+  expect(f.push('end ⟦ph')).toBe('end ')
   expect(f.flush()).toBe('⟦ph')
   expect(f.flush()).toBe('')
 })
 
-test('два маркери — виграє другий', () => {
+test('two markers: the second wins', () => {
   const f = createMarkerFilter()
-  expect(f.push('⟦phase:gather⟧\nа ⟦phase:verify⟧ б')).toBe('а б')
+  expect(f.push('⟦phase:gather⟧\na ⟦phase:verify⟧ b')).toBe('a b')
   expect(f.phase).toBe('verify')
 })
 
-test('перенос після маркера приходить наступним шматком', () => {
+test('the newline after a marker arrives in the next chunk', () => {
   const f = createMarkerFilter()
   expect(f.push('⟦phase:plan⟧')).toBe('')
-  expect(f.push('\nтекст')).toBe('текст')
+  expect(f.push('\ntext')).toBe('text')
   expect(f.phase).toBe('plan')
 })
 
-test('маркер у кінці шматка, далі текст без переносу', () => {
+test('a marker at the end of a chunk, then text without a newline', () => {
   const f = createMarkerFilter()
   expect(f.push('⟦phase:plan⟧')).toBe('')
-  expect(f.push('текст')).toBe('текст')
-  expect(f.push('\nдалі')).toBe('\nдалі')
+  expect(f.push('text')).toBe('text')
+  expect(f.push('\nmore')).toBe('\nmore')
 })
 
-test('маркер, складений з уламків після вирізання, теж вирізається', () => {
+test('a marker assembled from fragments after stripping is stripped too', () => {
   const f = createMarkerFilter()
   expect(f.push('⟦pha⟦phase:plan⟧se:verify⟧')).toBe('')
   expect(f.phase).toBe('verify')
   expect(stripMarkers('⟦pha⟦phase:plan⟧se:verify⟧')).toBe('')
 })
 
-test('stripMarkers прибирає маркер', () => {
+test('stripMarkers removes a marker', () => {
   expect(stripMarkers('⟦phase:verify⟧\nok')).toBe('ok')
 })

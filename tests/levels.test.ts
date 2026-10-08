@@ -1,7 +1,7 @@
 import { test, expect } from 'claude-code/testing'
 import { applyFloor, maxLevel, isLevel, rank } from '../src/levels'
-test('low піднімається до medium', () => { expect(applyFloor('low')).toBe('medium') })
-test('maxLevel бере вищий', () => {
+test('low is raised to medium', () => { expect(applyFloor('low')).toBe('medium') })
+test('maxLevel picks the higher one', () => {
   expect(maxLevel('medium', 'xhigh')).toBe('xhigh')
   expect(maxLevel('max', 'high')).toBe('max')
   expect(maxLevel('low', 'low')).toBe('medium')

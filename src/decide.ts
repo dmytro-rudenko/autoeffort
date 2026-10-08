@@ -1,4 +1,4 @@
-// Поєднання фази (маркер або правила), рівня з налаштувань і підлоги скіла/агента.
+// Combines the phase (marker or rules), the configured level and the skill/agent floor.
 import { applyFloor, maxLevel, rank } from './levels'
 import type { AnyLevel, Level } from './levels'
 import { classify, isPhase } from './classify'
@@ -9,8 +9,8 @@ export type Decision = { level: Level; phase: Phase; source: string; floor?: str
 export type DecideInput = {
   history: History
   stepIndex: number
-  marker?: Phase // з попереднього кроку цього треду
-  floorLevel?: AnyLevel // межа скіла/агента, якщо є
+  marker?: Phase // from the previous step of this thread
+  floorLevel?: AnyLevel // skill/agent floor, if any
   floorLabel?: string // 'skill:<name>' | 'agent'
 }
 
@@ -42,7 +42,7 @@ export function decide(input: DecideInput, config: Config): Decision {
   return { level: applyFloor(base), phase, source }
 }
 
-// Рядок статусу: `⚙ high · gather (rule:read) ↑skill`.
+// Status line: `⚙ high · gather (rule:read) ↑skill`.
 export function formatStatus(d: Decision): string {
   return `⚙ ${d.level} · ${d.phase} (${d.source})` + (d.floor ? ` ↑${d.floor.split(':')[0]}` : '')
 }

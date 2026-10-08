@@ -5,7 +5,7 @@ import type { Engine } from 'claude-code/testing'
 type Script = { text: string[]; tools: TurnStepToolUse[] }
 type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max' | undefined
 
-// Дно для подій, у які заходять хуки мода: модель, статус, лог, годинник.
+// Bottoms for the events the mod's hooks enter: model, status, log, clock.
 function bottoms(on: On, script: Script, seen: Effort[], statuses: (string | undefined)[] = []) {
   mock.clock(on, { now: 1000 })
   on('ui.status', (_$, e) => (statuses.push(e.text), { value: undefined }))
@@ -29,22 +29,22 @@ async function step($: Engine, index: number, effort: Effort, agentId?: string) 
   }
 }
 
-// Вхід команди так, як його штампує рушій для набраного `/autoeffort <args>`.
+// Command input as the engine stamps it for a typed `/autoeffort <args>`.
 const run = ($: Engine, args = '') =>
   $.command.run({ command: 'autoeffort', args, origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } })
 
 const READ: TurnStepToolUse[] = [{ name: 'Read', input: {} }]
 
-test('session.start реєструє команду autoeffort', async ($, on) => {
+test('session.start registers the autoeffort command', async ($, on) => {
   const specs: { name: string; description: string }[] = []
   on('command.register', (_$, e) => (specs.push(e), { value: { command: e.name } }))
   on('session.start', (_$, e) => e)
   await $.session.start({ cwd: '/', surface: null, isInteractive: false })
   expect(specs.map(s => s.name)).toEqual(['autoeffort'])
-  expect(specs[0]?.description).toBe('Стан і керування autoeffort: /autoeffort [on|off|log]')
+  expect(specs[0]?.description).toBe('autoeffort status and control: /autoeffort [on|off|log]')
 })
 
-test('/autoeffort: стан і останні рішення', async ($, on) => {
+test('/autoeffort: status and recent decisions', async ($, on) => {
   const script: Script = { text: [], tools: READ }
   bottoms(on, script, [])
   await step($, 0, 'high')
@@ -52,61 +52,61 @@ test('/autoeffort: стан і останні рішення', async ($, on) => 
   await step($, 1, 'max')
   const r = await run($, '')
   const text = r.text ?? ''
-  expect(text).toContain('autoeffort: увімкнено')
+  expect(text).toContain('autoeffort: enabled')
   expect(text).toContain('baseline: high')
   expect(text).toContain('skill: review')
-  expect(text).toContain('тред main: gather')
-  expect(text).toContain('Останні рішення:')
+  expect(text).toContain('thread main: gather')
+  expect(text).toContain('Recent decisions:')
   expect(text).toContain('main#0 xhigh · plan (rule:first-step)')
   expect(text).toContain('main#1 max · gather (rule:read) ↑skill:review:max')
 })
 
-test('/autoeffort показує не більше 20 рішень', async ($, on) => {
+test('/autoeffort shows at most 20 decisions', async ($, on) => {
   bottoms(on, { text: [], tools: READ }, [])
   for (let i = 0; i < 25; i++) await step($, i, 'high')
   const text = (await run($)).text ?? ''
   const lines = text.split('\n')
-  const decisions = lines.slice(lines.indexOf('Останні рішення:') + 1)
+  const decisions = lines.slice(lines.indexOf('Recent decisions:') + 1)
   expect(decisions.length).toBe(20)
   expect(decisions[0]?.startsWith('main#5 ')).toBe(true)
   expect(decisions[19]?.startsWith('main#24 ')).toBe(true)
 })
 
-test('/autoeffort без рішень: baseline і skill — прочерк', async ($, on) => {
+test('/autoeffort without decisions: baseline and skill are a dash', async ($, on) => {
   bottoms(on, { text: [], tools: [] }, [])
   const text = (await run($)).text ?? ''
   expect(text).toContain('baseline: —')
   expect(text).toContain('skill: —')
 })
 
-test('/autoeffort off → effort без змін; on → знову керує', async ($, on) => {
+test('/autoeffort off → effort unchanged; on → controls again', async ($, on) => {
   const seen: Effort[] = []
   bottoms(on, { text: ['x'], tools: [] }, seen)
-  expect((await run($, 'off')).text).toBe('autoeffort вимкнено')
+  expect((await run($, 'off')).text).toBe('autoeffort disabled')
   await step($, 0, 'high')
   expect(seen).toEqual(['high'])
-  expect((await run($)).text).toContain('autoeffort: вимкнено')
-  expect((await run($, 'on')).text).toBe('autoeffort увімкнено')
+  expect((await run($)).text).toContain('autoeffort: disabled')
+  expect((await run($, 'on')).text).toBe('autoeffort enabled')
   await step($, 0, 'high')
   expect(seen).toEqual(['high', 'xhigh'])
 })
 
-test('/autoeffort log — усі записи з часом ISO', async ($, on) => {
+test('/autoeffort log: all entries with ISO time', async ($, on) => {
   bottoms(on, { text: [], tools: READ }, [])
   for (let i = 0; i < 22; i++) await step($, i, 'high')
   const text = (await run($, 'log')).text ?? ''
   const lines = text.split('\n')
   expect(lines.length).toBe(22)
-  expect(lines[0]).toBe('1970-01-01T00:00:01.000Z main#0 xhigh · plan (rule:first-step) · вхід high')
+  expect(lines[0]).toBe('1970-01-01T00:00:01.000Z main#0 xhigh · plan (rule:first-step) · incoming high')
 })
 
-test('невідомий аргумент → підказка', async ($, on) => {
+test('unknown argument → usage hint', async ($, on) => {
   bottoms(on, { text: [], tools: [] }, [])
   const text = (await run($, 'foo')).text ?? ''
-  expect(text).toContain('Використання: /autoeffort [on|off|log]')
+  expect(text).toContain('Usage: /autoeffort [on|off|log]')
 })
 
-test('/autoeffort off очищає статус-рядок', async ($, on) => {
+test('/autoeffort off clears the status line', async ($, on) => {
   const statuses: (string | undefined)[] = []
   bottoms(on, { text: ['x'], tools: [] }, [], statuses)
   await step($, 0, 'high')
