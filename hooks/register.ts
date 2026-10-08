@@ -17,6 +17,8 @@ export const MARKER_PROMPT =
   'Effort control: begin every response, before any tool call, with exactly one marker naming what you will do in the NEXT step, after these tool results: ⟦phase:gather⟧ (reading/searching for context), ⟦phase:plan⟧ (analysing, deciding, designing), ⟦phase:implement⟧ (writing or editing), ⟦phase:verify⟧ (running/reading tests, lint, build, reviewing). The marker is stripped before anyone sees it; do not mention it.'
 
 const LOG_LIMIT = 500
+// Класифікації потрібен лише початок команди; повна команда лише важчить стан.
+const COMMAND_LIMIT = 200
 
 const threadsAtom = atom({ plugin: 'autoeffort', key: 'threads' } as const, {})
 const logAtom = atom({ plugin: 'autoeffort', key: 'log' } as const, [])
@@ -69,8 +71,9 @@ async function prepare($: Dollar, e: TurnStepInput, config: Config): Promise<Pre
 
 async function commit($: Dollar, prep: Prep, phase: MarkerPhase | undefined, result: TurnStepResult): Promise<void> {
   const tools: ToolUse[] = result.toolUses.map(u => {
+    if (u.name !== 'Bash') return { name: u.name }
     const cmd = (u.input as { command?: unknown } | null | undefined)?.command
-    return typeof cmd === 'string' ? { name: u.name, command: cmd } : { name: u.name }
+    return typeof cmd === 'string' ? { name: u.name, command: cmd.slice(0, COMMAND_LIMIT) } : { name: u.name }
   })
   const next = recordStep(prep.thread, tools, { resetStreak: prep.decision.source === 'rule:read-streak' })
   // Маркер цього кроку керує наступним кроком треду; відсутній — скидає.
@@ -87,30 +90,71 @@ async function safely($: Dollar, fn: () => Promise<void>): Promise<void> {
   }
 }
 
-// Вирізає маркери з потоку чанків. Утримане скидається перед tool/thinking/input/stop,
-// перед текстом іншого блоку і в кінці; engine-чанки проходять, не перериваючи утримання.
-export async function* filterChunks(source: AsyncIterable<TurnStepChunk>, filter: MarkerFilter): AsyncGenerator<TurnStepChunk, void> {
-  let lastIndex = 0
-  const flush = function* (): Generator<TurnStepChunk> {
-    const held = filter.flush()
-    if (held) yield { kind: 'text', index: lastIndex, text: held }
+// Вирізає маркери з потоку чанків: text — через `filter` (його фаза керує наступним кроком),
+// thinking — через окремий `thinkingFilter` (його фаза ігнорується, маркер лише не показується).
+// Утримане кожним фільтром скидається перед чанком іншого виду, перед блоком з іншим index
+// і в кінці; engine-чанки проходять, не перериваючи утримання.
+export async function* filterChunks(
+  source: AsyncIterable<TurnStepChunk>,
+  filter: MarkerFilter,
+  thinkingFilter: MarkerFilter = createMarkerFilter(),
+): AsyncGenerator<TurnStepChunk, void> {
+  const streams = {
+    text: { filter, index: 0 },
+    thinking: { filter: thinkingFilter, index: 0 },
+  }
+  const flush = function* (kind: 'text' | 'thinking'): Generator<TurnStepChunk> {
+    const s = streams[kind]
+    const held = s.filter.flush()
+    if (held) yield { kind, index: s.index, text: held }
   }
   for await (const c of source) {
     if (c.kind === 'engine') {
       yield c
       continue
     }
-    if (c.kind === 'text') {
-      if (c.index !== lastIndex) yield* flush()
-      lastIndex = c.index
-      const t = filter.push(c.text)
+    if (c.kind === 'text' || c.kind === 'thinking') {
+      const other = c.kind === 'text' ? 'thinking' : 'text'
+      yield* flush(other)
+      const s = streams[c.kind]
+      if (c.index !== s.index) yield* flush(c.kind)
+      s.index = c.index
+      const t = s.filter.push(c.text)
       if (t) yield { ...c, text: t }
       continue
     }
-    yield* flush()
+    yield* flush('thinking')
+    yield* flush('text')
     yield c
   }
-  yield* flush()
+  yield* flush('thinking')
+  yield* flush('text')
+}
+
+// Рядок рішення для /autoeffort: `<thread>#<step> <level> · <phase> (<source>)[ ↑<floor>]`.
+export function formatDecision(d: AutoeffortLogEntry): string {
+  return `${d.thread}#${d.step} ${d.level} · ${d.phase} (${d.source})` + (d.floor ? ` ↑${d.floor}` : '')
+}
+
+export const USAGE = 'Використання: /autoeffort [on|off|log]'
+
+async function statusText($: Dollar, enabled: boolean): Promise<string> {
+  const [baseline, skill, threads, log] = await Promise.all([read($, baselineAtom), read($, skillAtom), read($, threadsAtom), read($, logAtom)])
+  const lines = [
+    `autoeffort: ${enabled ? 'увімкнено' : 'вимкнено'}`,
+    `baseline: ${baseline ?? '—'}`,
+    `skill: ${skill ?? '—'}`,
+    ...Object.entries(threads).map(([key, t]) => `тред ${key}: ${t.lastPhase ?? '—'}`),
+    'Останні рішення:',
+    ...log.slice(-20).map(formatDecision),
+  ]
+  return lines.join('\n')
+}
+
+async function logText($: Dollar): Promise<string> {
+  const log = await read($, logAtom)
+  if (log.length === 0) return 'autoeffort: лог порожній'
+  return log.map(d => `${new Date(d.at).toISOString()} ${formatDecision(d)} · вхід ${d.incoming ?? '—'}`).join('\n')
 }
 
 export const register: Register = (on, options) => {
@@ -121,7 +165,30 @@ export const register: Register = (on, options) => {
     await safely($, async () => {
       if ((await read($, ENABLED_REF)) === undefined) await update($, enabledAtom, () => config.enabled)
     })
+    await safely($, async () => {
+      await $.command.register({ name: 'autoeffort', description: 'Стан і керування autoeffort: /autoeffort [on|off|log]', argumentHint: '[on|off|log]' })
+    })
     return next(e)
+  })
+
+  // Команда відповідає сама, без `next`: жодної вбудованої команди під нею немає.
+  on('command.run', { command: 'autoeffort' }, async ($, e) => {
+    try {
+      // Захисно: виклик без args не повинен падати.
+      const arg = (e.args ?? '').trim()
+      if (arg === 'on' || arg === 'off') {
+        await update($, enabledAtom, () => arg === 'on')
+        // Вимкнений мод не має лишати застарілий статус-рядок.
+        if (arg === 'off') $.ui.status(undefined)
+        return { text: arg === 'on' ? 'autoeffort увімкнено' : 'autoeffort вимкнено' }
+      }
+      if (arg === 'log') return { text: await logText($) }
+      if (arg === '') return { text: await statusText($, await read($, enabledAtom)) }
+      return { text: `autoeffort: невідомий аргумент «${arg}». ${USAGE}` }
+    } catch (err) {
+      $.ui.log(`autoeffort: ${String(err)}`)
+      return { text: `autoeffort: помилка: ${String(err)}` }
+    }
   })
 
   on('prompt.compose', async ($, e, next) => {
@@ -156,6 +223,8 @@ export const register: Register = (on, options) => {
     // Без effort (або при помилці) запит іде незмінним, але маркери все одно вирізаються:
     // секцію промпту додано, тож модель їх пише.
     let prep: Prep | undefined
+    // Крок основного треду без effort: рішення немає, тож старий статус не має висіти.
+    if (e.effort === undefined && e.agentId === undefined) $.ui.status(undefined)
     if (e.effort !== undefined) {
       try {
         prep = await prepare($, e, config)
