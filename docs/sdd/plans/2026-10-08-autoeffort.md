@@ -317,7 +317,7 @@
    `commit($, e, prep, phase, result)`: `tools = result.toolUses.map(u => ({ name: u.name, command: typeof (u.input as any)?.command === 'string' ? (u.input as any).command : undefined }))`; `next = recordStep(t, tools, { resetStreak: decision.source === 'rule:read-streak' })`; записати `threads[key] = { ...next, lastPhase: decision.phase, marker: phase }` (маркер цього кроку керує наступним; `undefined` скидає).
    Усі записи — через `update($, atom, fn)`.
 
-- [ ] **Step 1: тест** `tests/register.test.ts`. Тестовий `on('turn.step', async function* (_$, e) { seen.push(e.effort); for (const t of script.text) yield { kind: 'text', index: 0, text: t }; return { turnId: e.turnId, index: e.index, answer: script.text.join(''), toolUses: script.tools, stopReason: 'end_turn', usage: null } })` імітує модель; хелпер `step($, index, effort, agentId?)` читає `$.turn.step({ turnId: 't1', index, model: 'claude-opus-5-5', effort, messageCount: 1, agentId })` до кінця і повертає `{ chunks, result: await s.result }`. Сценарії:
+- [x] **Step 1: тест** `tests/register.test.ts`. Тестовий `on('turn.step', async function* (_$, e) { seen.push(e.effort); for (const t of script.text) yield { kind: 'text', index: 0, text: t }; return { turnId: e.turnId, index: e.index, answer: script.text.join(''), toolUses: script.tools, stopReason: 'end_turn', usage: null } })` імітує модель; хелпер `step($, index, effort, agentId?)` читає `$.turn.step({ turnId: 't1', index, model: 'claude-opus-5-5', effort, messageCount: 1, agentId })` до кінця і повертає `{ chunks, result: await s.result }`. Сценарії:
   - крок 0 з `effort: 'high'` → модель отримала `xhigh`; відповідь `'⟦phase:implement⟧\nпишу'` → у чанках і `result.answer` немає `⟦`; крок 1 → `medium` (маркер implement);
   - без маркерів: крок 1 після toolUses `[{name:'Read',input:{}}]` → `medium`; після трьох таких кроків → `xhigh` (read-streak);
   - Edit, далі Bash `{command:'npm test'}` → наступний крок `xhigh` (verify);
@@ -328,9 +328,9 @@
   - `test('вимкнено', { options: { enabled: false } }, …)` → effort не змінено, `prompt.compose` без секції;
   - `prompt.compose`: тестове дно `on('prompt.compose', () => ({ sections: [] }))`, `await $.prompt.compose({})` → є секція `autoeffort:phase-marker` зі `scope: 'session'`.
   Точні поля інпутів (`TurnStepInput`, `PromptComposeArgs`, `SkillPromptInput`) звірити з файлом типів; якщо тестовий кіт вимагає інших полів, доповнити їх у хелпері, не змінюючи сценарії.
-- [ ] **Step 2:** `claude plugin test` → нові тести падають (заглушка).
-- [ ] **Step 3:** реалізувати `hooks/register.ts` як описано.
-- [ ] **Step 4:** `claude plugin test` → усі зелені; `claude plugin validate` → `√ Validation passed`, у звіті `hooks:` містить `turn.step`, `prompt.compose`, `skill.prompt`, `turn.complete`, `session.start`; `tsc -p` → чисто.
+- [x] **Step 2:** `claude plugin test` → нові тести падають (заглушка).
+- [x] **Step 3:** реалізувати `hooks/register.ts` як описано.
+- [x] **Step 4:** `claude plugin test` → усі зелені; `claude plugin validate` → `√ Validation passed`, у звіті `hooks:` містить `turn.step`, `prompt.compose`, `skill.prompt`, `turn.complete`, `session.start`; `tsc -p` → чисто.
 
 ---
 
