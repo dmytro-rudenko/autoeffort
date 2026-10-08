@@ -2,7 +2,7 @@
 branch: feat/autoeffort
 spec: docs/sdd/specs/2026-10-08-autoeffort.md
 plan: docs/sdd/plans/2026-10-08-autoeffort.md
-status: in-progress
+status: done
 started: 2026-10-08
 ---
 
