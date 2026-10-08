@@ -217,3 +217,111 @@ test('turn.complete субагента видаляє його тред', async 
   await $.turn.complete({ answer: '', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer', agentId: 'a1' })
   expect(Object.keys(box.threads)).toEqual([])
 })
+
+// Тестовий хук state.set, що відмовляє в записі заданого ключа: імітує збій запису стану.
+function failWrite(on: On, key: string) {
+  on('state.set', (_$, e, next) => {
+    if (e.plugin === 'autoeffort' && e.key === key) return { deny: `denied ${key}` }
+    return next(e)
+  })
+}
+
+test('fail-open: збій prepare (запис baseline) → вихідний effort, маркери вирізано', async ($, on) => {
+  const seen: Effort[] = []
+  bottoms(on, { text: ['⟦phase:plan⟧\nhi'], tools: [] }, seen)
+  failWrite(on, 'baseline')
+  const r = await step($, 0, 'high')
+  expect(seen).toEqual(['high'])
+  expect(textOf(r.chunks)).toBe('hi')
+  expect(r.result.answer).toBe('hi')
+})
+
+test('fail-open: збій prepare (запис log) → вихідний effort, маркери вирізано', async ($, on) => {
+  const seen: Effort[] = []
+  bottoms(on, { text: ['⟦phase:plan⟧\nhi'], tools: [] }, seen)
+  failWrite(on, 'log')
+  const r = await step($, 0, 'high')
+  expect(seen).toEqual(['high'])
+  expect(textOf(r.chunks)).toBe('hi')
+  expect(r.result.answer).toBe('hi')
+})
+
+test('fail-open: збій commit (запис threads) → результат повертається, маркери вирізано', async ($, on) => {
+  const seen: Effort[] = []
+  bottoms(on, { text: ['⟦phase:plan⟧\nhi'], tools: READ }, seen)
+  failWrite(on, 'threads')
+  const r = await step($, 0, 'high')
+  expect(seen).toEqual(['xhigh'])
+  expect(textOf(r.chunks)).toBe('hi')
+  expect(r.result.answer).toBe('hi')
+  expect(r.result.toolUses).toEqual(READ)
+})
+
+test('межа субагента: baseline high, агент з max → max, floor agent:max', async ($, on) => {
+  const seen: Effort[] = []
+  bottoms(on, { text: [], tools: READ }, seen)
+  const box = captureLog(on)
+  await step($, 0, 'high')
+  await step($, 0, 'max', 'a1')
+  expect(seen).toEqual(['xhigh', 'max'])
+  expect(box.log.at(-1)?.thread).toBe('a1')
+  expect(box.log.at(-1)?.floor).toBe('agent:max')
+})
+
+test('крок основного треду без effort очищає статус', async ($, on) => {
+  const statuses: (string | undefined)[] = []
+  bottoms(on, { text: ['x'], tools: [] }, [], statuses)
+  await step($, 0, 'high')
+  await step($, 1, undefined)
+  expect(statuses).toEqual(['⚙ xhigh · plan (rule:first-step)', undefined])
+})
+
+test('крок субагента без effort статус не чіпає', async ($, on) => {
+  const statuses: (string | undefined)[] = []
+  bottoms(on, { text: ['x'], tools: [] }, [], statuses)
+  await step($, 0, undefined, 'a1')
+  expect(statuses).toEqual([])
+})
+
+test('стан треду: command лише для Bash, обрізаний до 200 символів', async ($, on) => {
+  const long = 'npm test ' + 'x'.repeat(300)
+  const tools: TurnStepToolUse[] = [
+    { name: 'Bash', input: { command: long } },
+    { name: 'Task', input: { command: 'not a shell command' } },
+  ]
+  bottoms(on, { text: [], tools }, [])
+  const box = captureLog(on)
+  await step($, 0, 'high')
+  expect(box.threads.main?.steps.at(-1)?.tools).toEqual([{ name: 'Bash', command: long.slice(0, 200) }, { name: 'Task' }])
+})
+
+test('маркер у thinking-чанку не показується', async ($, on) => {
+  const seen: Effort[] = []
+  mock.clock(on, { now: 1000 })
+  on('ui.status', () => ({ value: undefined }))
+  on('ui.log', () => ({ value: undefined }))
+  on('turn.step', async function* (_$, e) {
+    seen.push(e.effort as Effort)
+    yield { kind: 'thinking', index: 0, text: '⟦phase:pl' }
+    yield { kind: 'thinking', index: 0, text: 'an⟧\nдумаю' }
+    yield { kind: 'text', index: 1, text: 'ok' }
+    return { turnId: e.turnId, index: e.index, answer: 'ok', toolUses: [], stopReason: 'end_turn', usage: null }
+  })
+  const box = captureLog(on)
+  const r = await step($, 0, 'high')
+  expect(r.chunks.map(c => (c.kind === 'thinking' || c.kind === 'text' ? `${c.kind}:${c.text}` : c.kind))).toEqual(['thinking:думаю', 'text:ok'])
+  // Фаза з thinking ігнорується: маркера в тексті не було.
+  expect(box.threads.main?.marker).toBeUndefined()
+})
+
+test('filterChunks: thinking утримується окремо і скидається перед текстом', async () => {
+  async function* src(): AsyncGenerator<TurnStepChunk> {
+    yield { kind: 'thinking', index: 0, text: 'a⟦ph' }
+    yield { kind: 'text', index: 1, text: '⟦phase:verify⟧b' }
+  }
+  const filter = createMarkerFilter()
+  const out: TurnStepChunk[] = []
+  for await (const c of filterChunks(src(), filter, createMarkerFilter())) out.push(c)
+  expect(out.map(c => (c.kind === 'thinking' || c.kind === 'text' ? `${c.kind}:${c.index}:${c.text}` : c.kind))).toEqual(['thinking:0:a', 'thinking:0:⟦ph', 'text:1:b'])
+  expect(filter.phase).toBe('verify')
+})

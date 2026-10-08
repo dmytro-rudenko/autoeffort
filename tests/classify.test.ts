@@ -1,8 +1,9 @@
 import { test, expect } from 'claude-code/testing'
 import { classify, recordStep, startTurn, isPhase, PHASES, EMPTY_HISTORY } from '../src/classify'
 import type { History, ToolUse } from '../src/classify'
+import { DEFAULTS } from '../src/config'
 
-const verifyPattern = new RegExp('\\b(test|tests|jest|vitest|pytest|lint|eslint|tsc|build|typecheck|cargo (check|test)|go test)\\b')
+const verifyPattern = DEFAULTS.verifyPattern
 const ctx = (stepIndex: number, readStreak = 3) => ({ stepIndex, readStreak, verifyPattern })
 const hist = (tools: ToolUse[], over: Partial<History> = {}): History => ({ ...EMPTY_HISTORY, steps: [{ tools }], ...over })
 

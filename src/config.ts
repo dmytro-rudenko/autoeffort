@@ -4,7 +4,7 @@ import { type Level, isLevel, applyFloor } from './levels'
 export type PhaseName = 'gather' | 'plan' | 'implement' | 'verify'
 export type Config = { enabled: boolean; levels: Record<PhaseName, Level>; readStreak: number; verifyPattern: RegExp }
 
-export const DEFAULT_VERIFY_PATTERN = '\\b(test|tests|jest|vitest|pytest|lint|eslint|tsc|build|typecheck|cargo (check|test)|go test)\\b'
+export const DEFAULT_VERIFY_PATTERN = '(^|[\\s;&|(])((npm|pnpm|yarn|bun)\\s+(run\\s+)?(test|lint|build|typecheck|check)(?![\\w-])|npx\\s+(jest|vitest|eslint|tsc)\\b|(jest|vitest|pytest|eslint|tsc|mypy|ruff)(\\s|$)|cargo\\s+(check|test|clippy)\\b|go\\s+(test|vet)\\b|make\\s+(test|check|lint)\\b)'
 
 const DEFAULT_LEVELS: Readonly<Record<PhaseName, Level>> = { gather: 'medium', plan: 'xhigh', implement: 'medium', verify: 'xhigh' }
 const PHASES: readonly PhaseName[] = ['gather', 'plan', 'implement', 'verify']

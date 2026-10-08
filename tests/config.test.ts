@@ -32,3 +32,20 @@ test('enabled', () => {
   expect(loadConfig({ enabled: false }).enabled).toBe(false)
   expect(loadConfig({ enabled: 'no' }).enabled).toBe(true)
 })
+
+const VERIFY_SRC = '(^|[\\s;&|(])((npm|pnpm|yarn|bun)\\s+(run\\s+)?(test|lint|build|typecheck|check)(?![\\w-])|npx\\s+(jest|vitest|eslint|tsc)\\b|(jest|vitest|pytest|eslint|tsc|mypy|ruff)(\\s|$)|cargo\\s+(check|test|clippy)\\b|go\\s+(test|vet)\\b|make\\s+(test|check|lint)\\b)'
+
+test('типовий verifyPattern — вузький патерн команд перевірки', () => {
+  expect(DEFAULT_VERIFY_PATTERN).toBe(VERIFY_SRC)
+  expect(DEFAULTS.verifyPattern.source).toBe(VERIFY_SRC)
+})
+
+test('типовий verifyPattern: команди перевірки збігаються', () => {
+  for (const cmd of ['npm test', 'pnpm run build', 'npx vitest run', 'pytest -q', 'cd app && cargo test', 'tsc -p .', 'go test ./...', 'yarn lint', 'make check', '(tsc --noEmit)'])
+    expect([cmd, DEFAULTS.verifyPattern.test(cmd)]).toEqual([cmd, true])
+})
+
+test('типовий verifyPattern: інші команди не збігаються', () => {
+  for (const cmd of ['git commit -m "add tests"', 'cat test.txt', 'ls tests', 'npm run build-docs', 'npm install', 'echo build', 'mkdir lint', 'npm run testing'])
+    expect([cmd, DEFAULTS.verifyPattern.test(cmd)]).toEqual([cmd, false])
+})

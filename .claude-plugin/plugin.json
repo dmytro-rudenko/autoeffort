@@ -11,6 +11,6 @@
     "implement":     { "type": "string", "title": "Реалізація", "description": "Рівень для фази implement", "default": "medium", "options": ["medium","high","xhigh","max"] },
     "verify":        { "type": "string", "title": "Перевірка", "description": "Рівень для фази verify", "default": "xhigh", "options": ["medium","high","xhigh","max"] },
     "readStreak":    { "type": "number", "title": "Поріг серії читань", "description": "Скільки кроків поспіль лише з читаннями переводять у plan", "default": 3 },
-    "verifyPattern": { "type": "string", "title": "Патерн команд перевірки", "description": "RegExp для Bash-команд фази verify", "default": "\\b(test|tests|jest|vitest|pytest|lint|eslint|tsc|build|typecheck|cargo (check|test)|go test)\\b" }
+    "verifyPattern": { "type": "string", "title": "Патерн команд перевірки", "description": "RegExp для Bash-команд фази verify", "default": "(^|[\\s;&|(])((npm|pnpm|yarn|bun)\\s+(run\\s+)?(test|lint|build|typecheck|check)(?![\\w-])|npx\\s+(jest|vitest|eslint|tsc)\\b|(jest|vitest|pytest|eslint|tsc|mypy|ruff)(\\s|$)|cargo\\s+(check|test|clippy)\\b|go\\s+(test|vet)\\b|make\\s+(test|check|lint)\\b)" }
   }
 }
