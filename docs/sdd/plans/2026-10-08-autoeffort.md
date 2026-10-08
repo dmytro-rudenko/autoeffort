@@ -158,7 +158,7 @@
 
 `recordStep`: `steps = [...h.steps, { tools }].slice(-10)`; `editedThisTurn ||= tools.some(EDIT)`; `readStreak = opts.resetStreak ? 0 : h.readStreak`; потім якщо `tools.length > 0 && tools.every(READ)` → `readStreak + 1`, інакше `0`.
 
-- [ ] **Step 1: тест** `tests/classify.test.ts` — по одному тесту на кожне правило 1–7 і на `recordStep`:
+- [x] **Step 1: тест** `tests/classify.test.ts` — по одному тесту на кожне правило 1–7 і на `recordStep`:
   - `stepIndex 0` → plan/first-step навіть після Edit;
   - Bash `npm test` після редагування → verify; той самий Bash без `editedThisTurn` → carry;
   - Edit → implement; Edit + Bash `vitest` при editedThisTurn → verify;
@@ -167,9 +167,9 @@
   - `recordStep` нарощує streak на кроках лише з читанням, скидає на змішаному, `resetStreak` обнуляє перед підрахунком, `steps` обрізаються до 10;
   - `startTurn` скидає `editedThisTurn` і `readStreak`.
   Регекс у тестах: `new RegExp('\\b(test|tests|jest|vitest|pytest|lint|eslint|tsc|build|typecheck|cargo (check|test)|go test)\\b')`.
-- [ ] **Step 2:** `claude plugin test` → classify-тести падають (модуля немає).
-- [ ] **Step 3:** реалізувати `src/classify.ts` за правилами вище.
-- [ ] **Step 4:** `claude plugin test` → усі зелені; `tsc -p` → чисто.
+- [x] **Step 2:** `claude plugin test` → classify-тести падають (модуля немає).
+- [x] **Step 3:** реалізувати `src/classify.ts` за правилами вище.
+- [x] **Step 4:** `claude plugin test` → усі зелені; `tsc -p` → чисто.
 
 ---
 
@@ -194,7 +194,7 @@
 - Утримання: після вирізання, якщо в буфері є `⟦` без `⟧` після нього, хвіст від `⟦` коротший за 32 символи і він є префіксом `⟦phase:` або починається з `⟦phase:`, цей хвіст утримується до наступного `push`. Решта віддається.
 - `flush()` віддає утримане як є і очищає буфер.
 
-- [ ] **Step 1: тест** `tests/marker.test.ts`:
+- [x] **Step 1: тест** `tests/marker.test.ts`:
   - `push('⟦phase:plan⟧\nДалі читаю')` → `'Далі читаю'`, `phase === 'plan'`;
   - маркер розірвано на 3 шматки: `'Ок ⟦pha'`, `'se:impl'`, `'ement⟧ go'` → разом віддано `'Ок '` + `'go'`, `phase === 'implement'`;
   - `'⟦phase:bogus⟧x'` → `'x'`, `phase === undefined`;
@@ -202,9 +202,9 @@
   - `push('кінець ⟦ph')` → `'кінець '`, потім `flush()` → `'⟦ph'`;
   - два маркери → `phase` — другий;
   - `stripMarkers('⟦phase:verify⟧\nok')` → `'ok'`.
-- [ ] **Step 2:** `claude plugin test` → падає.
-- [ ] **Step 3:** реалізувати `src/marker.ts`.
-- [ ] **Step 4:** `claude plugin test` → зелені; `tsc -p` → чисто.
+- [x] **Step 2:** `claude plugin test` → падає.
+- [x] **Step 3:** реалізувати `src/marker.ts`.
+- [x] **Step 4:** `claude plugin test` → зелені; `tsc -p` → чисто.
 
 ---
 
@@ -226,8 +226,8 @@
   (`PhaseName` дублює `Phase` з Task 2, щоб хвиля 2 була незалежною; вони структурно однакові.)
 Правила: невалідний рівень (або `low`) → значення з `DEFAULTS` (для `low` — `applyFloor`, тобто `medium`); `readStreak` — ціле ≥ 1, інакше 3; некоректний RegExp → `DEFAULT_VERIFY_PATTERN`; `enabled` не boolean → true.
 
-- [ ] **Step 1: тест** `tests/config.test.ts`: порожні options → `DEFAULTS`; `{ plan: 'max' }` → plan max; `{ gather: 'low' }` → medium; `{ gather: 'turbo' }` → medium (типове); `{ readStreak: 0 }` → 3; `{ verifyPattern: '(' }` → типовий регекс (`.source === DEFAULT_VERIFY_PATTERN`); `{ enabled: false }` → false.
-- [ ] **Step 2:** падає. **Step 3:** реалізація. **Step 4:** зелені; `tsc -p` → чисто.
+- [x] **Step 1: тест** `tests/config.test.ts`: порожні options → `DEFAULTS`; `{ plan: 'max' }` → plan max; `{ gather: 'low' }` → medium; `{ gather: 'turbo' }` → medium (типове); `{ readStreak: 0 }` → 3; `{ verifyPattern: '(' }` → типовий регекс (`.source === DEFAULT_VERIFY_PATTERN`); `{ enabled: false }` → false.
+- [x] **Step 2:** падає. **Step 3:** реалізація. **Step 4:** зелені; `tsc -p` → чисто.
 
 ---
 

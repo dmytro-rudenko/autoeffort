@@ -11,9 +11,9 @@ started: 2026-10-08
 Готово, коли мод завантажується, проходить validate і тести класифікації, а поточний рівень і причина видні в статус-рядку.
 
 ## Now
-1. Building: хвиля 1/5 закрита (Task 1 — каркас, levels.ts, контракт стану); validate ✓, 4 тести ✓, tsc ✓.
-2. Збірка в копії в контейнері /home/claude/autoeffort, синхронізація сюди після кожної хвилі. Імпорт між файлами — без розширення ('../src/levels').
-3. Далі: хвиля 2 — Tasks 2, 3, 4 (src/classify.ts, src/marker.ts, src/config.ts); перевірка `claude plugin test /home/claude/autoeffort`.
+1. Building: хвилі 1–2 з 5 закриті (Tasks 1–4: каркас, levels, classify, marker, config); 35 тестів ✓, tsc ✓.
+2. Відомий дефект контракту: History.steps readonly vs AutoeffortThread.steps mutable — Task 6 копіює масиви при записі в стан.
+3. Далі: хвиля 3 — Task 5 (src/decide.ts); перевірка `claude plugin test /home/claude/autoeffort`.
 
 ## Timeline
 ### 2026-10-08
@@ -24,3 +24,4 @@ started: 2026-10-08
 - ✎ Дизайн узгоджено: A + C (маркери ⟦phase:…⟧ через prompt.compose + правила за інструментами), скіл = нижня межа, субагенти теж під модом; правило переходу до plan — ≥ 3 кроки поспіль лише з читаннями.
 - ✎ План схвалено: 7 задач, 5 хвиль; історію інструментів беремо з toolUses у результаті turn.step (без окремого tool.call); межа субагента — через відхилення e.effort від baseline.
 - ✎ Хвиля 1: каркас зелений; Ruling: isLevel через Object.hasOwn (план мав `in`, що пропускав 'toString') — тест додано.
+- ✎ Хвиля 2: classify/marker/config зелені; маркер вирізається й коли перенос рядка приходить наступним шматком, і коли маркер склеюється з фрагментів (обидва — Ruling, додано тести).
