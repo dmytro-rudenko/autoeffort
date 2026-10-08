@@ -258,14 +258,14 @@
 
 `formatStatus`: `` `⚙ ${level} · ${phase} (${source})` `` + (`floor` ? `` ` ↑${floor.split(':')[0]}` `` : ''). Приклади: `⚙ xhigh · plan (marker)`, `⚙ high · gather (rule:read) ↑skill`.
 
-- [ ] **Step 1: тест** `tests/decide.test.ts` (з `DEFAULTS` з config):
+- [x] **Step 1: тест** `tests/decide.test.ts` (з `DEFAULTS` з config):
   - маркер `implement` на кроці 0 → medium/implement/marker (маркер має пріоритет над first-step);
   - без маркера, крок 0 → xhigh/plan/`rule:first-step`;
   - Read-крок, межа `high` від `skill:review` → high, `floor === 'skill:high'`, статус `⚙ high · gather (rule:read) ↑skill`;
   - межа `medium` при фазі plan → xhigh, без `floor`;
   - межа `low` → не впливає, рівень ≥ medium;
   - `config.levels.gather = 'max'` → Read-крок дає max.
-- [ ] **Step 2:** падає. **Step 3:** реалізація. **Step 4:** зелені; `tsc -p` → чисто.
+- [x] **Step 2:** падає. **Step 3:** реалізація. **Step 4:** зелені; `tsc -p` → чисто.
 
 ---
 

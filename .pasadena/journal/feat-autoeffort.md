@@ -11,9 +11,9 @@ started: 2026-10-08
 Готово, коли мод завантажується, проходить validate і тести класифікації, а поточний рівень і причина видні в статус-рядку.
 
 ## Now
-1. Building: хвилі 1–2 з 5 закриті (Tasks 1–4: каркас, levels, classify, marker, config); 35 тестів ✓, tsc ✓.
-2. Відомий дефект контракту: History.steps readonly vs AutoeffortThread.steps mutable — Task 6 копіює масиви при записі в стан.
-3. Далі: хвиля 3 — Task 5 (src/decide.ts); перевірка `claude plugin test /home/claude/autoeffort`.
+1. Building: хвилі 1–3 з 5 закриті (Tasks 1–5); 45 тестів ✓, tsc ✓.
+2. Для Task 6: floor-рядок має вигляд `skill:<name>:<level>` (напр. `skill:review:max`); History.steps readonly — копіювати масиви при записі в $.state.
+3. Далі: хвиля 4 — Task 6 (hooks/register.ts + tests/register.test.ts); перевірка `claude plugin test /home/claude/autoeffort`.
 
 ## Timeline
 ### 2026-10-08
@@ -25,3 +25,4 @@ started: 2026-10-08
 - ✎ План схвалено: 7 задач, 5 хвиль; історію інструментів беремо з toolUses у результаті turn.step (без окремого tool.call); межа субагента — через відхилення e.effort від baseline.
 - ✎ Хвиля 1: каркас зелений; Ruling: isLevel через Object.hasOwn (план мав `in`, що пропускав 'toString') — тест додано.
 - ✎ Хвиля 2: classify/marker/config зелені; маркер вирізається й коли перенос рядка приходить наступним шматком, і коли маркер склеюється з фрагментів (обидва — Ruling, додано тести).
+- ✎ Хвиля 3: decide зелений; Ruling: floor = `${label}:${level}` за формулою плану (приклад `skill:high` у плані суперечив їй); невалідний маркер зі стану ігнорується.
