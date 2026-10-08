@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Effort за фазами роботи: збір контексту, планування, реалізація, перевірка",
   "author": { "name": "Dmitry Rudenko" },
+  "license": "MIT",
   "types": "./types/index.d.ts",
   "userConfig": {
     "enabled":       { "type": "boolean", "title": "Увімкнено", "description": "Чи керує мод effort", "default": true },

@@ -30,12 +30,12 @@
 
 ## Налаштування
 
-Параметри `userConfig` (змінюються через `/config` або в `~/.claude/settings.json`):
+Параметри `userConfig` (змінюються через `/config` або в `~/.claude/settings.json`). Ключ у `pluginConfigs` — `autoeffort@autoeffort` для встановленого мода і `autoeffort` для підключеного з локальної теки:
 
 ```json
 {
   "pluginConfigs": {
-    "autoeffort": {
+    "autoeffort@autoeffort": {
       "options": {
         "enabled": true,
         "gather": "medium",
@@ -50,18 +50,29 @@
 }
 ```
 
-## Підключення
+## Встановлення
 
-Разово:
+У рядку вводу Claude Code в терміналі:
+
+```
+/plugin install autoeffort --marketplace dmytro-rudenko/autoeffort
+```
+
+Далі `y`, щоб додати маркетплейс, вибір області встановлення і екран із параметрами. Мод починає працювати в цій самій сесії, без перезапуску.
+
+### З локальної теки
+
+Для розробки мод підключається з клону репозиторію, разово:
 
 ```sh
-claude --plugin-dir /home/pc/projects/my-cc-mods/autoeffort
+git clone https://github.com/dmytro-rudenko/autoeffort.git ~/autoeffort
+claude --plugin-dir ~/autoeffort
 ```
 
 Постійно — через `CLAUDE_CODE_PLUGIN_DIRS` у `env` файлу `~/.claude/settings.json`:
 
 ```json
-{ "env": { "CLAUDE_CODE_PLUGIN_DIRS": "/home/pc/projects/my-cc-mods/autoeffort" } }
+{ "env": { "CLAUDE_CODE_PLUGIN_DIRS": "~/autoeffort" } }
 ```
 
 ## Команда `/autoeffort`
@@ -90,3 +101,7 @@ claude plugin validate .
 claude plugin test .
 tsc -p .
 ```
+
+## Ліцензія
+
+[MIT](LICENSE)
