@@ -70,7 +70,7 @@
   ```
 - Produces: `plugin.json` з `userConfig` (див. крок 3), `"types": "./types/index.d.ts"`.
 
-- [ ] **Step 1: тест** — `tests/levels.test.ts`:
+- [x] **Step 1: тест** — `tests/levels.test.ts`:
   ```ts
   import { test, expect } from 'claude-code/testing'
   import { applyFloor, maxLevel, isLevel, rank } from '../src/levels'
@@ -83,7 +83,7 @@
   test('isLevel', () => { expect(isLevel('xhigh')).toBe(true); expect(isLevel('auto')).toBe(false); expect(isLevel(3)).toBe(false) })
   test('rank', () => { expect(rank('low')).toBe(0); expect(rank('max')).toBe(4) })
   ```
-- [ ] **Step 2: каркас без levels, бачимо падіння.**
+- [x] **Step 2: каркас без levels, бачимо падіння.**
   `.claude-plugin/plugin.json`:
   ```json
   {
@@ -109,7 +109,7 @@
   `tsconfig.json` — опції з заголовка файлу типів (`target es2023`, `lib ["es2023"]`, `types []`, `module esnext`, `moduleResolution bundler`, `strict`, `noUncheckedIndexedAccess`, `noEmit`, `skipLibCheck`, `jsx react`, `jsxFactory h`, `jsxFragmentFactory Fragment`), `"include": [".claude-plugin/types", "hooks", "types", "src", "tests"]`.
   `.gitignore`: `.claude-plugin/types/`, `node_modules/`.
   Запуск `claude plugin test /home/claude/autoeffort` → тест падає на відсутньому `../src/levels`.
-- [ ] **Step 3: реалізація** `src/levels.ts`:
+- [x] **Step 3: реалізація** `src/levels.ts`:
   ```ts
   export type Level = 'medium' | 'high' | 'xhigh' | 'max'
   export type AnyLevel = 'low' | Level
@@ -120,7 +120,7 @@
   export const applyFloor = (l: AnyLevel): Level => (l === 'low' ? 'medium' : l)
   export const maxLevel = (a: AnyLevel, b: AnyLevel): Level => applyFloor(RANK[a] >= RANK[b] ? a : b)
   ```
-- [ ] **Step 4: проходження** — `claude plugin test` → 4 passed. Якщо імпорт без `.ts` не резолвиться, перейти на `'../src/levels.ts'` і додати `"allowImportingTsExtensions": true` у `tsconfig.json`; обране написання лишається в `tests/levels.test.ts` як зразок. Далі `claude plugin validate /home/claude/autoeffort` → `√ Validation passed`, `tsc -p /home/claude/autoeffort` → чисто.
+- [x] **Step 4: проходження** — `claude plugin test` → 4 passed. Якщо імпорт без `.ts` не резолвиться, перейти на `'../src/levels.ts'` і додати `"allowImportingTsExtensions": true` у `tsconfig.json`; обране написання лишається в `tests/levels.test.ts` як зразок. Далі `claude plugin validate /home/claude/autoeffort` → `√ Validation passed`, `tsc -p /home/claude/autoeffort` → чисто.
 
 ---
 
