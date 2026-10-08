@@ -1,0 +1,16 @@
+{
+  "name": "autoeffort",
+  "version": "0.1.0",
+  "description": "Effort за фазами роботи: збір контексту, планування, реалізація, перевірка",
+  "author": { "name": "Dmitry Rudenko" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "enabled":       { "type": "boolean", "title": "Увімкнено", "description": "Чи керує мод effort", "default": true },
+    "gather":        { "type": "string", "title": "Збір контексту", "description": "Рівень для фази gather", "default": "medium", "options": ["medium","high","xhigh","max"] },
+    "plan":          { "type": "string", "title": "Планування", "description": "Рівень для фази plan", "default": "xhigh", "options": ["medium","high","xhigh","max"] },
+    "implement":     { "type": "string", "title": "Реалізація", "description": "Рівень для фази implement", "default": "medium", "options": ["medium","high","xhigh","max"] },
+    "verify":        { "type": "string", "title": "Перевірка", "description": "Рівень для фази verify", "default": "xhigh", "options": ["medium","high","xhigh","max"] },
+    "readStreak":    { "type": "number", "title": "Поріг серії читань", "description": "Скільки кроків поспіль лише з читаннями переводять у plan", "default": 3 },
+    "verifyPattern": { "type": "string", "title": "Патерн команд перевірки", "description": "RegExp для Bash-команд фази verify", "default": "\\b(test|tests|jest|vitest|pytest|lint|eslint|tsc|build|typecheck|cargo (check|test)|go test)\\b" }
+  }
+}
